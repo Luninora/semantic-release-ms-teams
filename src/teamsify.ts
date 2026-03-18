@@ -7,16 +7,12 @@ interface AdaptiveCardElement {
 }
 
 interface AdaptiveCardMessage {
-  type: "message";
+  type: "AdaptiveCard";
   attachments: Array<{
-    contentType: "application/vnd.microsoft.card.adaptive";
-    contentUrl: null;
-    content: {
-      $schema: string;
-      type: "AdaptiveCard";
-      version: string;
-      body: AdaptiveCardElement[];
-    };
+    $schema: string;
+    type: "AdaptiveCard";
+    version: string;
+    body: AdaptiveCardElement[];
   }>;
 }
 
@@ -177,17 +173,13 @@ export function teamsify(
   }
 
   return {
-    type: "message",
+    type: "AdaptiveCard",
     attachments: [
       {
-        contentType: "application/vnd.microsoft.card.adaptive",
-        contentUrl: null,
-        content: {
-          $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
-          type: "AdaptiveCard",
-          version: "1.4",
-          body,
-        },
+        $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
+        type: "AdaptiveCard",
+        version: "1.4",
+        body,
       },
     ],
   };

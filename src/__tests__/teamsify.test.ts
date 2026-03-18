@@ -7,17 +7,16 @@ describe("teamsify", () => {
     const context = createContext();
     const result = teamsify({}, context, false);
 
-    expect(result.type).toBe("message");
+    expect(result.type).toBe("AdaptiveCard");
     expect(result.attachments).toHaveLength(1);
-    expect(result.attachments[0].contentType).toBe("application/vnd.microsoft.card.adaptive");
-    expect(result.attachments[0].content.type).toBe("AdaptiveCard");
-    expect(result.attachments[0].content.version).toBe("1.4");
+    expect(result.attachments[0].type).toBe("AdaptiveCard");
+    expect(result.attachments[0].version).toBe("1.4");
   });
 
   it("includes header with default title", () => {
     const context = createContext();
     const result = teamsify({}, context, false);
-    const body = result.attachments[0].content.body;
+    const body = result.attachments[0].body;
 
     const header = body[0];
     expect(header.type).toBe("TextBlock");
@@ -28,7 +27,7 @@ describe("teamsify", () => {
   it("uses custom title from config", () => {
     const context = createContext();
     const result = teamsify({ title: "Admin App Release" }, context, false);
-    const header = result.attachments[0].content.body[0];
+    const header = result.attachments[0].body[0];
 
     expect(header.text).toBe("Admin App Release");
   });
@@ -36,7 +35,7 @@ describe("teamsify", () => {
   it("shows dry-run title in dry-run mode", () => {
     const context = createContext();
     const result = teamsify({}, context, true);
-    const header = result.attachments[0].content.body[0];
+    const header = result.attachments[0].body[0];
 
     expect(header.text).toContain("DRY-RUN");
   });
@@ -44,7 +43,7 @@ describe("teamsify", () => {
   it("includes repository name", () => {
     const context = createContext();
     const result = teamsify({}, context, false);
-    const body = result.attachments[0].content.body;
+    const body = result.attachments[0].body;
     const subtitle = body[1];
 
     expect(subtitle.text).toBe("admin");
@@ -53,7 +52,7 @@ describe("teamsify", () => {
   it("includes FactSet with version info", () => {
     const context = createContext();
     const result = teamsify({}, context, false);
-    const body = result.attachments[0].content.body;
+    const body = result.attachments[0].body;
     const factSet = body.find((el) => el.type === "FactSet") as {
       facts: Array<{ title: string; value: string }>;
     };
@@ -68,7 +67,7 @@ describe("teamsify", () => {
   it('shows "None" when there is no last release', () => {
     const context = createContext({ lastRelease: undefined });
     const result = teamsify({}, context, false);
-    const body = result.attachments[0].content.body;
+    const body = result.attachments[0].body;
     const factSet = body.find((el) => el.type === "FactSet") as {
       facts: Array<{ title: string; value: string }>;
     };
@@ -80,7 +79,7 @@ describe("teamsify", () => {
   it("includes contributors by default", () => {
     const context = createContext();
     const result = teamsify({}, context, false);
-    const body = result.attachments[0].content.body;
+    const body = result.attachments[0].body;
     const factSet = body.find((el) => el.type === "FactSet") as {
       facts: Array<{ title: string; value: string }>;
     };
@@ -92,7 +91,7 @@ describe("teamsify", () => {
   it("hides contributors when showContributors is false", () => {
     const context = createContext();
     const result = teamsify({ showContributors: false }, context, false);
-    const body = result.attachments[0].content.body;
+    const body = result.attachments[0].body;
     const factSet = body.find((el) => el.type === "FactSet") as {
       facts: Array<{ title: string; value: string }>;
     };
@@ -104,7 +103,7 @@ describe("teamsify", () => {
   it("parses release note sections", () => {
     const context = createContext();
     const result = teamsify({}, context, false);
-    const body = result.attachments[0].content.body;
+    const body = result.attachments[0].body;
 
     const textBlocks = body.filter((el) => el.type === "TextBlock" && typeof el.text === "string");
     const features = textBlocks.find((el) => el.text === "**Features**");
@@ -117,7 +116,7 @@ describe("teamsify", () => {
   it("includes change items in sections", () => {
     const context = createContext();
     const result = teamsify({}, context, false);
-    const body = result.attachments[0].content.body;
+    const body = result.attachments[0].body;
 
     const textBlocks = body.filter(
       (el) =>
@@ -142,7 +141,7 @@ describe("teamsify", () => {
       },
     });
     const result = teamsify({}, context, false);
-    const body = result.attachments[0].content.body;
+    const body = result.attachments[0].body;
 
     // Should have header, subtitle, and factset but no separator or sections
     expect(body).toHaveLength(3);
@@ -172,7 +171,7 @@ describe("teamsify", () => {
       ],
     });
     const result = teamsify({}, context, false);
-    const body = result.attachments[0].content.body;
+    const body = result.attachments[0].body;
     const factSet = body.find((el) => el.type === "FactSet") as {
       facts: Array<{ title: string; value: string }>;
     };
