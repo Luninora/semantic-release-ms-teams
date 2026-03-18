@@ -1,113 +1,128 @@
-# semantic-release-ms-teams
+# @luninora/semantic-release-ms-teams
 
-[semantic-release](https://github.com/semantic-release/semantic-release) plugin to send release notes to a teams channel when the release succeeds.
+A [semantic-release](https://github.com/semantic-release/semantic-release) plugin that sends release notifications to Microsoft Teams via [Adaptive Cards](https://adaptivecards.io/).
+
+Uses the modern [Teams Workflows webhook](https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook) format (Adaptive Cards), replacing the deprecated Office 365 Connector (MessageCard) format.
 
 | Step               | Description                                                    |
-| ------------------ |----------------------------------------------------------------|
+| ------------------ | -------------------------------------------------------------- |
 | `verifyConditions` | Check the `webhookUrl` option or `TEAMS_WEBHOOK_URL` variable. |
-| `generateNotes`    | Allow sending release note to MS Teams in dry-run mode.        |
-| `success`          | Send a Teams message to notify of a new release.               |
+| `success`          | Send a Teams Adaptive Card to notify of a new release.         |
+
+## Requirements
+
+- Node.js >= 20
+- semantic-release >= 20
+- A Microsoft Teams [Workflows webhook](https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook)
 
 ## Installation
 
-```sh
-npm install semantic-release-ms-teams --save-dev
-# or
-yarn add semantic-release-ms-teams --dev
+This package is published to GitHub Packages. Configure your `.npmrc`:
+
+```
+@luninora:registry=https://npm.pkg.github.com
 ```
 
-This plugin is using an _incoming webhook_ to notify a teams channel. Here is
-[some documentation](https://docs.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook#add-an-incoming-webhook-to-a-teams-channel) to create one.
+Then install:
+
+```sh
+npm install @luninora/semantic-release-ms-teams --save-dev
+```
+
+## Setup: Creating a Teams Webhook
+
+1. In Microsoft Teams, go to the channel where you want notifications
+2. Click the **...** menu > **Workflows**
+3. Search for **"Post to a channel when a webhook request is received"**
+4. Follow the setup wizard — Teams will generate a webhook URL
+5. Copy the URL and use it in your configuration
 
 ## Usage
 
+Add the plugin to your semantic-release configuration (`.releaserc.json`, `release.config.mjs`, etc.):
+
 ```json
-// .releaserc.json
 {
-  "branches": ["main"],
   "plugins": [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
-    ["semantic-release-ms-teams", {
-      "webhookUrl": "...",
-      "title": "A new version has been released",
-      "imageUrl": "http://...",
-      "showContributors": false,
-      "notifyInDryRun": true,
+    ["@luninora/semantic-release-ms-teams", {
+      "webhookUrl": "https://...",
+      "title": "Admin App Release"
     }]
   ]
 }
 ```
 
-| Variable                                         | Details             | Description                                                                                                                   | 
-|--------------------------------------------------|---------------------|-------------------------------------------------------------------------------------------------------------------------------|
-| `webhookUrl` or `TEAMS_WEBHOOK_URL`              | **required**, url   | The incoming webhook url of the channel to publish release notes to.                                                          |
-| `webhookUrlDryRun` or `TEAMS_WEBHOOK_URL_DRYRUN` | _optional_, url     | Similar to `webhookUrl` or `TEAMS_WEBHOOK_URL`, but will be used in dryRun mode. Default: `webhookUrl` or `TEAMS_WEBHOOK_URL` |
-| `title`                                          | _optional_, text    | The title of the message. Default: _A new version has been released_                                                          |
-| `imageUrl`                                       | _optional_, url     | An image displayed in the message, next to the title. The image must be less than 200x200.                                    |
-| `showContributors`                               | _optional_, boolean | Whether or not the contributors should be displayed in the message. Default: `true`                                           |
-| `notifyInDryRun`                                 | _optional_, boolean | Whether or not the release notes will be send to Teams when semantic-release runs in dry-run mode. Default: `true`            |
+For production, use the `TEAMS_WEBHOOK_URL` environment variable instead of hardcoding the URL:
 
-### Notes
-- `webhookUrl` is a property of the config object in `.releaserc.json`, and,
-  `TEAMS_WEBHOOK_URL` is an environment variable. The config object can be
-  useful to try the plugin, but most of the time, production environments
-  prefers environment variables. You can use both, but not in the same time as
-  it does not make sense. If you do define both, the config object overrides
-  the environment variable.
+```json
+{
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    "@luninora/semantic-release-ms-teams"
+  ]
+}
+```
 
-- **IMPORTANT**: The `webhookUrl` variable you can use within your plugin
-  configuration is meant to be used only for test purposes. Because you don't
-  want to publicly publish this url and do let the world know a way to send
-  messages to your teams channel, you will want to use the `TEAMS_WEBHOOK_URL`
-  instead.
+```sh
+TEAMS_WEBHOOK_URL=https://... npx semantic-release
+```
 
-- When in dry-run mode, here are the order of considered urls:
-  `webhookUrlDryRun`, `TEAMS_WEBHOOK_URL_DRY_RUN`, `webhookUrl`,
-  `TEAMS_WEBHOOK_URL`
+### GitHub Actions Example
 
-- The default value for `imageUrl` is <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Gitlab_meaningful_logo.svg/144px-Gitlab_meaningful_logo.svg.png" width="30" height="30" style="border-radius: 50%; vertical-align: middle" />
-  _https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Gitlab_meaningful_logo.svg/144px-Gitlab_meaningful_logo.svg.png_
+```yaml
+- name: Release
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+  run: npx semantic-release
+```
 
-- The list of Contributors is built using the email associated with the commits
-  (only the part before the "@" is kept). This list can be disabled (mainly for
-  privacy reasons).
+## Configuration
 
-- The official `@semantic-release/git` plugin may cause a second message to be
-  sent (because the plugin potentially adds a commit on the current branch, to
-  save changes in files like `package.json`, `package-lock.json`, `CHANGELOG.md`).
-  In order to prevent that, an environment variable (`HAS_PREVIOUS_SEM_REL_EXECUTION`)
-  is set to `true` after the first message, then this plugin won't send any other
-  message, as long as the plugin is part of the config.
+| Option                                            | Required | Description                                                                        |
+| ------------------------------------------------- | -------- | ---------------------------------------------------------------------------------- |
+| `webhookUrl` or `TEAMS_WEBHOOK_URL`               | Yes      | The Teams Workflows webhook URL to post release notifications to.                  |
+| `webhookUrlDryRun` or `TEAMS_WEBHOOK_URL_DRY_RUN` | No       | Webhook URL used in dry-run mode. Falls back to the primary URL.                   |
+| `title`                                           | No       | Custom title for the notification card. Default: `"A new version has been released"` |
+| `showContributors`                                | No       | Whether to show contributors in the card. Default: `true`                          |
+| `notifyInDryRun`                                  | No       | Whether to send notifications in dry-run mode. Default: `true`                     |
 
-## Screenshots
+### URL Resolution
 
-![preview](docs/screenshot-success-1.png "preview")
-![preview](docs/screenshot-generate-notes-1.png "dry-run")
+**Normal mode:** `webhookUrl` (config) > `TEAMS_WEBHOOK_URL` (env)
 
-## Development
+**Dry-run mode:** `webhookUrlDryRun` (config) > `TEAMS_WEBHOOK_URL_DRY_RUN` (env) > `webhookUrl` (config) > `TEAMS_WEBHOOK_URL` (env)
 
-Here are some steps to test the plugin locally:
+If both config and environment variable are set, the config value takes precedence and a warning is logged.
 
-- checkout the source code:
-  ```sh
-  git clone git@gitlab-ncsa.ubisoft.org:sragot/semantic-release-ms-teams.git
-  cd semantic-release-ms-teams
-  npm install
-  ```
-- create a personal access token in github, then `export GH_TOKEN=...`
-- run `semantic-release` locally safely:
-  ```sh
-  npm link
-  npm link semantic-release-ms-teams
-  npm run release -- --dry-run --no-ci
-  ```
+### Duplicate Prevention
 
-## Dependencies
+If [`@semantic-release/git`](https://github.com/semantic-release/git) is detected in the plugin list, duplicate notifications are automatically prevented. The git plugin causes semantic-release to re-execute, which would normally send the notification twice.
 
-- [`remark`](https://www.npmjs.com/package/remark): Markdown to JSON
-- [`mdast-util-to-markdown`](https://www.npmjs.com/package/mdast-util-to-markdown): JSON to Markdown
-- [`node-fetch-commonjs`](https://www.npmjs.com/package/node-fetch-commonjs): As fetch isn't in NodeJS 16, and 
-  semantic-release doesn't support ES modules. These 2 assertions are subject to evolutions.
+## Notification Card
 
-Greatly inspired by [semantic-release-slack-bot](https://github.com/juliuscc/semantic-release-slack-bot) ... Thanks ;)
+The plugin sends an [Adaptive Card](https://adaptivecards.io/) with:
+
+- **Header** — configurable title
+- **Repository name**
+- **Facts** — Version, Last Release, Commits count, Contributors (optional)
+- **Changelog sections** — Features, Bug Fixes, Performance Improvements, etc.
+
+The changelog is parsed from the release notes generated by `@semantic-release/release-notes-generator`.
+
+## Differences from the Original
+
+This is a fork of [yllieth/semantic-release-ms-teams](https://github.com/yllieth/semantic-release-ms-teams) with the following changes:
+
+- **TypeScript** — Full rewrite in TypeScript with ESM
+- **Adaptive Cards** — Replaced deprecated Office 365 Connector (MessageCard) format with Adaptive Cards for Teams Workflows webhooks
+- **No runtime dependencies** — Uses native `fetch()` (Node 20+) and simple regex parsing instead of `node-fetch` and `remark`
+- **Modern Node.js** — Requires Node.js 20+
+- **GitHub Packages** — Published to GitHub Packages instead of npm
+
+## License
+
+MIT
