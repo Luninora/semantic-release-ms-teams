@@ -47,6 +47,7 @@ export interface LastRelease {
 export interface NextRelease extends LastRelease {
   type: string;
   notes: string;
+  channel?: string | null;
 }
 
 export interface Commit {

@@ -33,8 +33,9 @@ describe("lifecycle-success", () => {
     await success({ webhookUrl: WEBHOOK_URL }, context);
 
     const body = JSON.parse(fetchSpy.mock.calls[0][1].body);
-    expect(body.type).toBe("AdaptiveCard");
-    expect(body.attachments[0].type).toBe("AdaptiveCard");
+    expect(body.type).toBe("message");
+    expect(body.attachments[0].contentType).toBe("application/vnd.microsoft.card.adaptive");
+    expect(body.attachments[0].content.type).toBe("AdaptiveCard");
   });
 
   it("skips when no URL is resolved", async () => {
