@@ -42,6 +42,15 @@ const SECTION_CONFIG: Record<string, { style: string; icon: string; color: strin
 
 const DEFAULT_SECTION_CONFIG = { style: "default", icon: "Note", color: "Default" };
 
+const SECTION_ORDER = [
+  "Features",
+  "Bug Fixes",
+  "Performance Improvements",
+  "Code Refactoring",
+  "Reverts",
+  "Documentation",
+];
+
 /**
  * Parse a changelog line like:
  *   "**auth:** add support for passkeys ([abc123](url))"
@@ -237,9 +246,13 @@ export function teamsify(
     },
   ];
 
-  // Changelog sections
+  // Changelog sections (sorted: Features first, then by defined order)
   const notes = nextRelease?.notes ?? "";
-  const sections = extractSections(notes);
+  const sections = extractSections(notes).sort((a, b) => {
+    const ai = SECTION_ORDER.indexOf(a.name);
+    const bi = SECTION_ORDER.indexOf(b.name);
+    return (ai === -1 ? SECTION_ORDER.length : ai) - (bi === -1 ? SECTION_ORDER.length : bi);
+  });
 
   for (const section of sections) {
     body.push(buildSectionHeader(section.name));
