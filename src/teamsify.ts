@@ -253,6 +253,7 @@ export function teamsify(
     actions.push({
       type: "Action.OpenUrl",
       title: "View Release on GitHub",
+      iconUrl: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
       url: `${releaseUrl}/releases/tag/${version}`,
     });
   }
